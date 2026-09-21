@@ -8,7 +8,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
-  // Controls the claim form
+  // Controls which item's claim form is currently open
   const [claimItem, setClaimItem] = useState(null);
   const [claimName, setClaimName] = useState("");
   const [claimMessage, setClaimMessage] = useState("");
@@ -21,7 +21,7 @@ function App() {
     description: "",
   });
 
-  // Load reports from the Express backend
+  // Load lost and found reports from the Express backend
   useEffect(() => {
     fetch("http://localhost:5000/api/items")
       .then((response) => {
@@ -41,6 +41,7 @@ function App() {
       });
   }, []);
 
+  // Handle report form input changes
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -72,8 +73,10 @@ function App() {
 
       const newItem = await response.json();
 
+      // Add the newly created item to the beginning of the list
       setItems((currentItems) => [newItem, ...currentItems]);
 
+      // Clear the report form
       setForm({
         name: "",
         type: "Lost",
@@ -96,8 +99,8 @@ function App() {
     setClaimMessage("");
   };
 
-  // Submit a claim
-  const handleClaimSubmit = (e) => {
+  // Submit a claim to the Express backend
+  const handleClaimSubmit = async (e) => {
     e.preventDefault();
 
     if (!claimName || !claimMessage) {
@@ -105,17 +108,45 @@ function App() {
       return;
     }
 
-    alert(`Claim submitted for ${claimItem.name}!`);
+    try {
+      const response = await fetch("http://localhost:5000/api/claims", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemId: claimItem.id,
+          itemName: claimItem.name,
+          claimantName: claimName,
+          proof: claimMessage,
+        }),
+      });
 
-    setClaimItem(null);
-    setClaimName("");
-    setClaimMessage("");
+      if (!response.ok) {
+        throw new Error("Failed to submit claim");
+      }
+
+      const newClaim = await response.json();
+
+      // Useful for checking the returned claim during development
+      console.log("Claim submitted:", newClaim);
+
+      alert("Claim submitted successfully!");
+
+      // Close and clear the claim form
+      setClaimItem(null);
+      setClaimName("");
+      setClaimMessage("");
+    } catch (error) {
+      console.error("Error submitting claim:", error);
+      alert("Unable to submit claim.");
+    }
   };
 
   const lostCount = items.filter((item) => item.type === "Lost").length;
   const foundCount = items.filter((item) => item.type === "Found").length;
 
-  // Apply both search and type filter
+  // Apply search and Lost/Found filtering
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -244,7 +275,7 @@ function App() {
                     <span>📅 {item.date}</span>
                   </div>
 
-                  {/* Only found items can currently be claimed */}
+                  {/* Only Found items can currently be claimed */}
                   {item.type === "Found" && (
                     <button
                       className="claim-button"
@@ -259,7 +290,7 @@ function App() {
           )}
         </section>
 
-        {/* Report */}
+        {/* Report section */}
         <section className="report-section" id="report">
           <div className="form-intro">
             <p className="eyebrow">REPORT</p>
@@ -397,6 +428,7 @@ function App() {
         </div>
       )}
 
+      {/* Footer */}
       <footer>
         <p>CampusFind — Campus Lost & Found System</p>
       </footer>

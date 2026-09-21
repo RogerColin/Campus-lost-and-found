@@ -26,6 +26,9 @@ let items = [
   },
 ];
 
+// Temporary claim storage for the demo
+let claims = [];
+
 // Test API
 app.get("/", (req, res) => {
   res.json({
@@ -60,6 +63,30 @@ app.post("/api/items", (req, res) => {
   items.unshift(newItem);
 
   res.status(201).json(newItem);
+});
+
+// POST a new claim
+app.post("/api/claims", (req, res) => {
+  const { itemId, itemName, claimantName, proof } = req.body;
+
+  if (!itemId || !itemName || !claimantName || !proof) {
+    return res.status(400).json({
+      message: "Please provide all claim details.",
+    });
+  }
+
+  const newClaim = {
+    id: Date.now(),
+    itemId,
+    itemName,
+    claimantName,
+    proof,
+    status: "Pending",
+  };
+
+  claims.push(newClaim);
+
+  res.status(201).json(newClaim);
 });
 
 const PORT = 5000;
