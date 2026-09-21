@@ -8,6 +8,11 @@ function App() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
+  // Controls the claim form
+  const [claimItem, setClaimItem] = useState(null);
+  const [claimName, setClaimName] = useState("");
+  const [claimMessage, setClaimMessage] = useState("");
+
   const [form, setForm] = useState({
     name: "",
     type: "Lost",
@@ -16,7 +21,7 @@ function App() {
     description: "",
   });
 
-  // Load items from the Express backend
+  // Load reports from the Express backend
   useEffect(() => {
     fetch("http://localhost:5000/api/items")
       .then((response) => {
@@ -36,7 +41,6 @@ function App() {
       });
   }, []);
 
-  // Handle form input changes
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -85,10 +89,33 @@ function App() {
     }
   };
 
+  // Open the claim form for a found item
+  const handleClaim = (item) => {
+    setClaimItem(item);
+    setClaimName("");
+    setClaimMessage("");
+  };
+
+  // Submit a claim
+  const handleClaimSubmit = (e) => {
+    e.preventDefault();
+
+    if (!claimName || !claimMessage) {
+      alert("Please fill in all claim details.");
+      return;
+    }
+
+    alert(`Claim submitted for ${claimItem.name}!`);
+
+    setClaimItem(null);
+    setClaimName("");
+    setClaimMessage("");
+  };
+
   const lostCount = items.filter((item) => item.type === "Lost").length;
   const foundCount = items.filter((item) => item.type === "Found").length;
 
-  // Search and filter items
+  // Apply both search and type filter
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -216,6 +243,16 @@ function App() {
                     <span>📍 {item.location}</span>
                     <span>📅 {item.date}</span>
                   </div>
+
+                  {/* Only found items can currently be claimed */}
+                  {item.type === "Found" && (
+                    <button
+                      className="claim-button"
+                      onClick={() => handleClaim(item)}
+                    >
+                      Claim Item
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -307,6 +344,58 @@ function App() {
           </form>
         </section>
       </main>
+
+      {/* Claim Modal */}
+      {claimItem && (
+        <div className="modal-overlay">
+          <div className="claim-modal">
+            <button
+              className="close-button"
+              onClick={() => setClaimItem(null)}
+            >
+              ×
+            </button>
+
+            <p className="eyebrow">CLAIM ITEM</p>
+
+            <h2>Claim {claimItem.name}</h2>
+
+            <p>
+              Provide some information that helps verify that this item
+              belongs to you.
+            </p>
+
+            <form onSubmit={handleClaimSubmit}>
+              <div className="form-group">
+                <label htmlFor="claimName">Your Name *</label>
+
+                <input
+                  id="claimName"
+                  value={claimName}
+                  onChange={(e) => setClaimName(e.target.value)}
+                  placeholder="Enter your name"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="claimMessage">
+                  Proof / Description *
+                </label>
+
+                <textarea
+                  id="claimMessage"
+                  value={claimMessage}
+                  onChange={(e) => setClaimMessage(e.target.value)}
+                  placeholder="Describe something that proves this item belongs to you..."
+                  rows="4"
+                />
+              </div>
+
+              <button type="submit">Submit Claim</button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <footer>
         <p>CampusFind — Campus Lost & Found System</p>
