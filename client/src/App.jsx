@@ -3,15 +3,19 @@ import "./App.css";
 
 function App() {
   const [items, setItems] = useState([]);
+  const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
-  // Controls which item's claim form is currently open
   const [claimItem, setClaimItem] = useState(null);
   const [claimName, setClaimName] = useState("");
   const [claimMessage, setClaimMessage] = useState("");
+
+  // Controls the rejection dialog
+  const [rejectingClaim, setRejectingClaim] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -21,7 +25,7 @@ function App() {
     description: "",
   });
 
-  // Load lost and found reports from the Express backend
+  // Load reports from backend
   useEffect(() => {
     fetch("http://localhost:5000/api/items")
       .then((response) => {
@@ -41,7 +45,28 @@ function App() {
       });
   }, []);
 
-  // Handle report form input changes
+  // Load claims for the admin dashboard
+  const loadClaims = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/claims");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch claims");
+      }
+
+      const data = await response.json();
+      setClaims(data);
+    } catch (error) {
+      console.error("Error fetching claims:", error);
+    }
+  };
+
+  // Load claims when the page opens
+  useEffect(() => {
+    loadClaims();
+  }, []);
+
+  // Handle report form changes
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -49,7 +74,7 @@ function App() {
     });
   };
 
-  // Submit a new lost/found report
+  // Submit a lost/found report
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -73,10 +98,8 @@ function App() {
 
       const newItem = await response.json();
 
-      // Add the newly created item to the beginning of the list
       setItems((currentItems) => [newItem, ...currentItems]);
 
-      // Clear the report form
       setForm({
         name: "",
         type: "Lost",
@@ -92,14 +115,14 @@ function App() {
     }
   };
 
-  // Open the claim form for a found item
+  // Open claim form
   const handleClaim = (item) => {
     setClaimItem(item);
     setClaimName("");
     setClaimMessage("");
   };
 
-  // Submit a claim to the Express backend
+  // Submit claim
   const handleClaimSubmit = async (e) => {
     e.preventDefault();
 
@@ -128,12 +151,13 @@ function App() {
 
       const newClaim = await response.json();
 
-      // Useful for checking the returned claim during development
       console.log("Claim submitted:", newClaim);
+
+      // Add the new claim to the admin list immediately
+      setClaims((currentClaims) => [...currentClaims, newClaim]);
 
       alert("Claim submitted successfully!");
 
-      // Close and clear the claim form
       setClaimItem(null);
       setClaimName("");
       setClaimMessage("");
@@ -143,10 +167,101 @@ function App() {
     }
   };
 
+  // Approve a claim
+  const handleApprove = async (claimId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/claims/${claimId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "Approved",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to approve claim");
+      }
+
+      const updatedClaim = await response.json();
+
+      setClaims((currentClaims) =>
+        currentClaims.map((claim) =>
+          claim.id === updatedClaim.id ? updatedClaim : claim
+        )
+      );
+
+      alert("Claim approved successfully!");
+    } catch (error) {
+      console.error("Error approving claim:", error);
+      alert("Unable to approve claim.");
+    }
+  };
+
+  // Open rejection dialog
+  const handleRejectClick = (claim) => {
+    setRejectingClaim(claim);
+    setRejectionReason("");
+  };
+
+  // Confirm rejection with a reason
+  const handleRejectSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!rejectionReason.trim()) {
+      alert("Please provide a reason for rejection.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/claims/${rejectingClaim.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "Rejected",
+            rejectionReason: rejectionReason.trim(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to reject claim");
+      }
+
+      const updatedClaim = await response.json();
+
+      setClaims((currentClaims) =>
+        currentClaims.map((claim) =>
+          claim.id === updatedClaim.id ? updatedClaim : claim
+        )
+      );
+
+      alert("Claim rejected.");
+
+      setRejectingClaim(null);
+      setRejectionReason("");
+    } catch (error) {
+      console.error("Error rejecting claim:", error);
+      alert("Unable to reject claim.");
+    }
+  };
+
   const lostCount = items.filter((item) => item.type === "Lost").length;
   const foundCount = items.filter((item) => item.type === "Found").length;
 
-  // Apply search and Lost/Found filtering
+  const pendingClaims = claims.filter(
+    (claim) => claim.status === "Pending"
+  );
+
+  // Search and filter reports
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -170,6 +285,7 @@ function App() {
           <a href="#home">Home</a>
           <a href="#items">Items</a>
           <a href="#report">Report Item</a>
+          <a href="#admin">Admin</a>
         </nav>
       </header>
 
@@ -232,7 +348,6 @@ function App() {
             <h2>Lost & Found Items</h2>
           </div>
 
-          {/* Search and filter controls */}
           <div className="search-controls">
             <input
               type="text"
@@ -275,7 +390,6 @@ function App() {
                     <span>📅 {item.date}</span>
                   </div>
 
-                  {/* Only Found items can currently be claimed */}
                   {item.type === "Found" && (
                     <button
                       className="claim-button"
@@ -290,7 +404,7 @@ function App() {
           )}
         </section>
 
-        {/* Report section */}
+        {/* Report */}
         <section className="report-section" id="report">
           <div className="form-intro">
             <p className="eyebrow">REPORT</p>
@@ -374,9 +488,104 @@ function App() {
             <button type="submit">Submit Report</button>
           </form>
         </section>
+
+        {/* Admin Dashboard */}
+        <section className="admin-section" id="admin">
+          <div className="section-heading">
+            <p className="eyebrow">ADMINISTRATION</p>
+            <h2>Claim Management</h2>
+            <p>
+              Review claims submitted by students and decide whether they
+              should be approved or rejected.
+            </p>
+          </div>
+
+          <div className="admin-summary">
+            <div>
+              <strong>{pendingClaims.length}</strong>
+              <span>Pending Claims</span>
+            </div>
+
+            <div>
+              <strong>
+                {claims.filter((claim) => claim.status === "Approved").length}
+              </strong>
+              <span>Approved</span>
+            </div>
+
+            <div>
+              <strong>
+                {claims.filter((claim) => claim.status === "Rejected").length}
+              </strong>
+              <span>Rejected</span>
+            </div>
+          </div>
+
+          {claims.length === 0 ? (
+            <div className="empty-state">
+              <h3>No claims submitted</h3>
+              <p>Claims will appear here when students submit them.</p>
+            </div>
+          ) : (
+            <div className="claims-list">
+              {claims.map((claim) => (
+                <div className="claim-card" key={claim.id}>
+                  <div className="claim-card-header">
+                    <div>
+                      <p className="eyebrow">CLAIM</p>
+                      <h3>{claim.itemName}</h3>
+                    </div>
+
+                    <span
+                      className={`claim-status ${claim.status.toLowerCase()}`}
+                    >
+                      {claim.status}
+                    </span>
+                  </div>
+
+                  <div className="claim-details">
+                    <p>
+                      <strong>Claimant:</strong> {claim.claimantName}
+                    </p>
+
+                    <p>
+                      <strong>Proof:</strong> {claim.proof}
+                    </p>
+
+                    {claim.status === "Rejected" &&
+                      claim.rejectionReason && (
+                        <p className="rejection-text">
+                          <strong>Rejection Reason:</strong>{" "}
+                          {claim.rejectionReason}
+                        </p>
+                      )}
+                  </div>
+
+                  {claim.status === "Pending" && (
+                    <div className="claim-actions">
+                      <button
+                        className="approve-button"
+                        onClick={() => handleApprove(claim.id)}
+                      >
+                        Approve Claim
+                      </button>
+
+                      <button
+                        className="reject-button"
+                        onClick={() => handleRejectClick(claim)}
+                      >
+                        Reject Claim
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
-      {/* Claim Modal */}
+      {/* Student Claim Modal */}
       {claimItem && (
         <div className="modal-overlay">
           <div className="claim-modal">
@@ -428,7 +637,49 @@ function App() {
         </div>
       )}
 
-      {/* Footer */}
+      {/* Rejection Modal */}
+      {rejectingClaim && (
+        <div className="modal-overlay">
+          <div className="claim-modal">
+            <button
+              className="close-button"
+              onClick={() => setRejectingClaim(null)}
+            >
+              ×
+            </button>
+
+            <p className="eyebrow">REJECT CLAIM</p>
+
+            <h2>Reject {rejectingClaim.itemName}?</h2>
+
+            <p>
+              Please provide a reason. This helps explain to the claimant
+              why their claim was not accepted.
+            </p>
+
+            <form onSubmit={handleRejectSubmit}>
+              <div className="form-group">
+                <label htmlFor="rejectionReason">
+                  Reason for Rejection *
+                </label>
+
+                <textarea
+                  id="rejectionReason"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Explain why this claim is being rejected..."
+                  rows="5"
+                />
+              </div>
+
+              <button type="submit" className="reject-confirm-button">
+                Confirm Rejection
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <footer>
         <p>CampusFind — Campus Lost & Found System</p>
       </footer>

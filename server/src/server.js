@@ -82,11 +82,49 @@ app.post("/api/claims", (req, res) => {
     claimantName,
     proof,
     status: "Pending",
+    rejectionReason: "",
   };
 
   claims.push(newClaim);
 
   res.status(201).json(newClaim);
+});
+
+// GET all claims
+app.get("/api/claims", (req, res) => {
+  res.json(claims);
+});
+
+// Approve or reject a claim
+app.patch("/api/claims/:id", (req, res) => {
+  const claimId = Number(req.params.id);
+  const { status, rejectionReason } = req.body;
+
+  const claim = claims.find((item) => item.id === claimId);
+
+  if (!claim) {
+    return res.status(404).json({
+      message: "Claim not found.",
+    });
+  }
+
+  if (status !== "Approved" && status !== "Rejected") {
+    return res.status(400).json({
+      message: "Status must be Approved or Rejected.",
+    });
+  }
+
+  if (status === "Rejected" && !rejectionReason) {
+    return res.status(400).json({
+      message: "A rejection reason is required.",
+    });
+  }
+
+  claim.status = status;
+  claim.rejectionReason =
+    status === "Rejected" ? rejectionReason : "";
+
+  res.json(claim);
 });
 
 const PORT = 5000;
