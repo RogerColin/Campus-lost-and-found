@@ -144,16 +144,16 @@ a {
 ========================================== */
 
 .hero {
-  min-height: 620px;
+  min-height: calc(100vh - 74px);
 
-  padding: 100px 7% 90px;
+  padding: clamp(80px, 8vw, 130px) clamp(5%, 7vw, 9%) 90px;
 
   display: grid;
   grid-template-columns: 1.25fr 0.75fr;
 
   align-items: center;
 
-  gap: 70px;
+  gap: clamp(45px, 6vw, 110px);
 
   background:
     radial-gradient(
@@ -365,7 +365,8 @@ a {
 
 .items-section,
 .stats-section {
-  padding: 100px 7%;
+  width: 100%;
+  padding: clamp(80px, 7vw, 120px) clamp(5%, 7vw, 9%);
 }
 
 .section-heading {
@@ -412,7 +413,7 @@ a {
   display: grid;
 
   grid-template-columns:
-    repeat(4, 1fr);
+    repeat(4, minmax(0, 1fr));
 
   gap: 18px;
 }
@@ -580,7 +581,7 @@ a {
   display: grid;
 
   grid-template-columns:
-    repeat(3, 1fr);
+    repeat(auto-fit, minmax(280px, 1fr));
 
   gap: 20px;
 }
@@ -767,13 +768,14 @@ a {
 ========================================== */
 
 .report-section {
-  padding: 110px 7%;
+  width: 100%;
+  padding: clamp(80px, 7vw, 120px) clamp(5%, 7vw, 9%);
 
   display: grid;
 
   grid-template-columns: 0.8fr 1.2fr;
 
-  gap: 90px;
+  gap: clamp(45px, 7vw, 120px);
 
   background: #111827;
 
@@ -1563,6 +1565,53 @@ footer {
   }
 }
 
+
+/* ==========================================
+   LARGE MONITORS
+========================================== */
+
+@media (min-width: 1400px) {
+  .hero {
+    padding-left: 8vw;
+    padding-right: 8vw;
+  }
+
+  .items-section,
+  .stats-section,
+  .report-section {
+    padding-left: 8vw;
+    padding-right: 8vw;
+  }
+
+  .items-grid {
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+  }
+
+  .hero h1 {
+    max-width: 950px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.4fr) minmax(380px, 0.6fr);
+    padding-left: 10vw;
+    padding-right: 10vw;
+  }
+
+  .items-section,
+  .stats-section,
+  .report-section {
+    padding-left: 10vw;
+    padding-right: 10vw;
+  }
+
+  .items-grid {
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+  }
+}
 
 /* ==========================================
    RESPONSIVE
