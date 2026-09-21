@@ -24,7 +24,9 @@ a {
   text-decoration: none;
 }
 
-/* NAVBAR */
+/* =========================
+   NAVBAR
+========================= */
 
 .navbar {
   width: 100%;
@@ -67,7 +69,9 @@ a {
   color: #5b4bdb;
 }
 
-/* HERO */
+/* =========================
+   HERO
+========================= */
 
 .hero {
   width: 100%;
@@ -160,7 +164,9 @@ a {
   line-height: 1.7;
 }
 
-/* STATS */
+/* =========================
+   STATISTICS
+========================= */
 
 .stats {
   width: 100%;
@@ -191,7 +197,9 @@ a {
   font-size: 13px;
 }
 
-/* ITEMS */
+/* =========================
+   ITEMS SECTION
+========================= */
 
 .items-section {
   width: 100%;
@@ -211,6 +219,43 @@ a {
   letter-spacing: -2px;
 }
 
+/* =========================
+   SEARCH + FILTER
+========================= */
+
+.search-controls {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.search-controls input,
+.search-controls select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d8d8dc;
+  border-radius: 8px;
+  background: white;
+  color: #222;
+  outline: none;
+}
+
+.search-controls input::placeholder {
+  color: #999;
+}
+
+.search-controls input:focus,
+.search-controls select:focus {
+  border-color: #6b5ce7;
+  box-shadow: 0 0 0 3px rgba(107, 92, 231, 0.1);
+}
+
+/* =========================
+   ITEM CARDS
+========================= */
+
 .items-grid {
   width: 100%;
   display: grid;
@@ -225,6 +270,12 @@ a {
   border: 1px solid #e3e3e5;
   border-radius: 14px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
 }
 
 .badge {
@@ -270,7 +321,30 @@ a {
   font-size: 13px;
 }
 
-/* REPORT */
+/* =========================
+   EMPTY SEARCH STATE
+========================= */
+
+.empty-state {
+  padding: 50px;
+  text-align: center;
+  background: white;
+  border: 1px solid #e3e3e5;
+  border-radius: 14px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #777;
+}
+
+/* =========================
+   REPORT SECTION
+========================= */
 
 .report-section {
   width: 100%;
@@ -291,6 +365,10 @@ a {
   color: #666;
   line-height: 1.7;
 }
+
+/* =========================
+   FORM
+========================= */
 
 form {
   width: 100%;
@@ -360,7 +438,9 @@ form button:hover {
   background: #5b4bdb;
 }
 
-/* FOOTER */
+/* =========================
+   FOOTER
+========================= */
 
 footer {
   padding: 30px 10%;
@@ -370,7 +450,9 @@ footer {
   font-size: 13px;
 }
 
-/* RESPONSIVE */
+/* =========================
+   TABLET
+========================= */
 
 @media (max-width: 900px) {
   .hero {
@@ -397,6 +479,10 @@ footer {
     gap: 40px;
   }
 }
+
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 600px) {
   .navbar {
@@ -431,7 +517,8 @@ footer {
   }
 
   .items-grid,
-  .form-row {
+  .form-row,
+  .search-controls {
     grid-template-columns: 1fr;
   }
 
@@ -441,6 +528,10 @@ footer {
   }
 
   form {
+    padding: 25px;
+  }
+
+  .hero-card {
     padding: 25px;
   }
 }

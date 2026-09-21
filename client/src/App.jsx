@@ -5,6 +5,9 @@ function App() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
+
   const [form, setForm] = useState({
     name: "",
     type: "Lost",
@@ -13,7 +16,7 @@ function App() {
     description: "",
   });
 
-  // Load reported items from the backend when the page opens
+  // Load items from the Express backend
   useEffect(() => {
     fetch("http://localhost:5000/api/items")
       .then((response) => {
@@ -33,7 +36,7 @@ function App() {
       });
   }, []);
 
-  // Update form values when the user types
+  // Handle form input changes
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -41,7 +44,7 @@ function App() {
     });
   };
 
-  // Send the new report to the Express backend
+  // Submit a new lost/found report
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -65,10 +68,8 @@ function App() {
 
       const newItem = await response.json();
 
-      // Add the newly created item to the beginning of the list
       setItems((currentItems) => [newItem, ...currentItems]);
 
-      // Clear the form
       setForm({
         name: "",
         type: "Lost",
@@ -87,6 +88,18 @@ function App() {
   const lostCount = items.filter((item) => item.type === "Lost").length;
   const foundCount = items.filter((item) => item.type === "Found").length;
 
+  // Search and filter items
+  const filteredItems = items.filter((item) => {
+    const matchesSearch =
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.location.toLowerCase().includes(search.toLowerCase());
+
+    const matchesFilter =
+      filter === "All" || item.type === filter;
+
+    return matchesSearch && matchesFilter;
+  });
+
   return (
     <div className="app">
       {/* Navigation */}
@@ -103,7 +116,7 @@ function App() {
       </header>
 
       <main>
-        {/* Hero Section */}
+        {/* Hero */}
         <section className="hero" id="home">
           <div>
             <p className="eyebrow">CAMPUS LOST & FOUND SYSTEM</p>
@@ -130,7 +143,7 @@ function App() {
             <h3>Find what matters.</h3>
 
             <p>
-              Report items, discover possible matches and help return
+              Report items, search existing reports and help return
               belongings to their owners.
             </p>
           </div>
@@ -154,20 +167,42 @@ function App() {
           </div>
         </section>
 
-        {/* Items Section */}
+        {/* Items */}
         <section className="items-section" id="items">
           <div className="section-heading">
-            <p className="eyebrow">RECENT REPORTS</p>
+            <p className="eyebrow">SEARCH REPORTS</p>
             <h2>Lost & Found Items</h2>
+          </div>
+
+          {/* Search and filter controls */}
+          <div className="search-controls">
+            <input
+              type="text"
+              placeholder="Search by item name or location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="All">All Items</option>
+              <option value="Lost">Lost Items</option>
+              <option value="Found">Found Items</option>
+            </select>
           </div>
 
           {loading ? (
             <p>Loading reports...</p>
-          ) : items.length === 0 ? (
-            <p>No reports available yet.</p>
+          ) : filteredItems.length === 0 ? (
+            <div className="empty-state">
+              <h3>No matching items found</h3>
+              <p>Try another search or filter.</p>
+            </div>
           ) : (
             <div className="items-grid">
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <div className="item-card" key={item.id}>
                   <div className={`badge ${item.type.toLowerCase()}`}>
                     {item.type}
@@ -187,7 +222,7 @@ function App() {
           )}
         </section>
 
-        {/* Report Section */}
+        {/* Report */}
         <section className="report-section" id="report">
           <div className="form-intro">
             <p className="eyebrow">REPORT</p>
@@ -273,7 +308,6 @@ function App() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer>
         <p>CampusFind — Campus Lost & Found System</p>
       </footer>
