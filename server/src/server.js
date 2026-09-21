@@ -6,10 +6,60 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Temporary data storage for the demo
+let items = [
+  {
+    id: 1,
+    name: "Black Wallet",
+    type: "Lost",
+    location: "Library",
+    date: "21 Sep 2026",
+    description: "Black leather wallet with college ID.",
+  },
+  {
+    id: 2,
+    name: "Blue Water Bottle",
+    type: "Found",
+    location: "Block A",
+    date: "20 Sep 2026",
+    description: "Blue Milton bottle found near the staircase.",
+  },
+];
+
+// Test API
 app.get("/", (req, res) => {
   res.json({
-    message: "Campus Lost and Found API is running!"
+    message: "Campus Lost and Found API is running!",
   });
+});
+
+// GET all items
+app.get("/api/items", (req, res) => {
+  res.json(items);
+});
+
+// POST a new item
+app.post("/api/items", (req, res) => {
+  const { name, type, location, date, description } = req.body;
+
+  if (!name || !type || !location || !date) {
+    return res.status(400).json({
+      message: "Please provide all required fields.",
+    });
+  }
+
+  const newItem = {
+    id: Date.now(),
+    name,
+    type,
+    location,
+    date,
+    description: description || "No description provided.",
+  };
+
+  items.unshift(newItem);
+
+  res.status(201).json(newItem);
 });
 
 const PORT = 5000;
